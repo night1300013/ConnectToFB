@@ -1,0 +1,19 @@
+{
+  "name": "connect-to-facebook",
+  "version": "0.0.1",
+  "description": "A simple skill that can connect to facebook",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "alexa",
+    "skill",
+    "trivia"
+  ],
+  "author": "ShangMing Cherng",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "alexa-sdk": "^1.0.12"
+  }
+}
