@@ -1,6 +1,6 @@
 var Alexa = require('alexa-sdk');
 var FB = require('fb');
-var util = require('util');
+//var util = require('util');
 
 // Messages used for Alexa to tell the user
 var repeatWelcomeMessage = "you can read your feed, and write a post using this skill.";
@@ -44,7 +44,7 @@ const handlers = {
        // Again check if we have an access token
        if (accessToken) {
            // Call FB module and get my feed with status_type, description, sotry, and message, limit to 5 posts
-           FB.api("/me/feed?fields=status_type,message,story,description&limit=2", function (response) {
+           FB.api("/me/feed?fields=status_type,message,story,description&limit=5", function (response) {
                if (response && !response.error) {
                    // If we have data
                    if (response.data) {
@@ -66,7 +66,7 @@ const handlers = {
                                output += response.data[i].story
                            }
                        }
-                       alexa.response.speak(output).listen(anythingElse).ls;
+                       alexa.response.speak(output).listen(anythingElse);
                        alexa.emit(":responseReady");
                    } else {
                        // report problem with parsing data
