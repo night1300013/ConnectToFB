@@ -1,9 +1,10 @@
 var Alexa = require('alexa-sdk');
 var FB = require('fb');
-//var util = require('util');
+
+const APP_ID = undefined;
 
 // Messages used for Alexa to tell the user
-var repeatWelcomeMessage = "you can read your feed, and write a post using this skill.";
+var repeatWelcomeMessage = "you can say read my feed, or write a post using this skill.";
 
 var welcomeMessage = "Welcome to connect to facebook, " + repeatWelcomeMessage;
 
@@ -15,14 +16,22 @@ var tryLaterText = "Please try again later."
 
 var noAccessToken = "There was a problem getting the correct token for this skill, " + tryLaterText;
 
-var anythingElse = "Is there anything else I can help with? You can read the feed, or make a post."
+var anythingElse = "Is there anything else I can help with? You can read the feed, or make a post. Say stop to stop this skill."
+
+var askPost = "What would you like to post?"
 
 var accessToken = "";
 
-// Create a new session handler
-const handlers = {
-   'NewSession': function () {
+const STATES = {
+    STARTMODE: '_STARTMODE', //The mode can read or write the post
+    FETCHMODE: '_FETCHMODE', //Try to fetch user's input
+    WRITEMODE: '_WRITEMODE' //write the post to the facebook
+};
 
+// Create a new session handler
+const newSessionHandlers = {
+   'NewSession': function () {
+       this.handler.state = STATES.STARTMODE;
        // Access token is pass through from the session information
        accessToken = this.event.session.user.accessToken;
 
@@ -37,9 +46,31 @@ const handlers = {
        }
    },
 
+   'AMAZON.CancelIntent': function () {
+       // Triggered wheen user asks Alexa top cancel interaction
+       this.emit(':tell', stopSkillMessage);
+   },
+
+   'AMAZON.StopIntent': function () {
+       // Triggered wheen user asks Alexa top stop interaction
+       this.emit(':tell', stopSkillMessage);
+   },
+
+   // Triggered wheen user asks Alexa for help
+   'AMAZON.HelpIntent': function () {
+       this.emit(':ask', helpText, helpText);
+   },
+
+   // Triggered when no intent matches Alexa request
+   'Unhandled': function () {
+       this.emit(':ask', helpText, helpText);
+   }
+ };
+
+const startConnectHandlers = Alexa.CreateStateHandler(STATES.STARTMODE, {
    // Read fb feed handler
    'readFeedIntent': function () {
-       var alexa = this;
+       var self = this;
 
        // Again check if we have an access token
        if (accessToken) {
@@ -66,11 +97,13 @@ const handlers = {
                                output += response.data[i].story
                            }
                        }
-                       alexa.response.speak(output).listen(anythingElse);
-                       alexa.emit(":responseReady");
+                       //self.emit(':tell', output);
+                       //self.emit(':ask', anythingElse, anythingElse);
+                       self.response.speak(output).listen(anythingElse);
+                       self.emit(":responseReady");
                    } else {
                        // report problem with parsing data
-                       alexa.emit(':tell', "There was an issue getting data.");
+                       self.emit(':tell', "There was an issue getting data.");
                    }
                } else {
                    // Handle errors here.
@@ -78,35 +111,16 @@ const handlers = {
                }
            });
        } else {
-           this.emit(':tell', noAccessToken, tryLaterText);
+           self.emit(':tell', noAccessToken, tryLaterText);
        }
    },
+
    // Write a post to Facebook feed handler.
-   'writePostIntent': function () {
-
-       var alexa = this;
-
-       // Chack if we have access tokens.
-       if (accessToken) {
-           FB.api("/me/feed", "POST",
-           {
-               // Message to be posted
-               "message": "This is Alexa, I can now access a whole new world of information, good luck!"
-           }, function (response) {
-               if (response && !response.error) {
-                   // Alexa output for successful post
-                   alexa.response.speak("Post successful!").listen(anythingElse, anythingElse);
-                   alexa.emit(":responseReady");
-               } else {
-                   console.log(response.error);
-                   // Output for Alexa, when there is an error.
-                   alexa.emit(':ask', "There was an error posting to your feed, please try again");
-               }
-           });
-
-       }else{
-           this.emit(':tell', noAccessToken, tryLaterText);
-       }
+   'startPostIntent': function () {
+       var self = this;
+       self.handler.state = STATES.FETCHMODE;
+       self.response.speak(askPost).listen(askPost);
+       self.emit(':responseReady');
    },
 
    'AMAZON.CancelIntent': function () {
@@ -128,11 +142,83 @@ const handlers = {
    'Unhandled': function () {
        this.emit(':ask', helpText, helpText);
    }
-};
+});
+
+const writePostHandlers = Alexa.CreateStateHandler(STATES.FETCHMODE, {
+    // 'NewSession': function () {
+    //     this.emit('NewSession'); // Uses the handler in newSessionHandlers
+    // },
+    // 'startPostIntent': function () {
+    //     this.handler.state = STATES.STARTMODE; // Switch state
+    //     this.emitWithState("startPostIntent");
+    // },
+
+    'writePostIntent': function () {
+        var self = this;
+        var message = this.event.request.intent.slots.Message.value;
+        self.attributes['message'] = message;
+        self.emit(':ask', "Are you say " + message + " ?");
+    },
+
+    'AMAZON.YesIntent': function(message) {
+        var self = this;
+//        var s = this.attributes['message'];
+        if (accessToken) {
+            FB.api("/me/feed", "POST",
+            {
+                // Message to be posted
+                "message": this.attributes['message']
+            }, function (response) {
+                if (response && !response.error) {
+                    // Alexa output for successful post
+                    self.response.speak("Post successful!").listen(anythingElse, anythingElse);
+                    self.emit(":responseReady");
+                } else {
+                    console.log(response.error);
+                    // Output for Alexa, when there is an error.
+                    self.emit(':ask', "There was an error posting to your feed, please try again");
+                }
+            });
+
+        } else{
+            self.emit(':tell', noAccessToken, tryLaterText);
+        }
+        self.handler.state = STATES.STARTMODE;
+    },
+
+    'AMAZON.NoIntent': function() {
+        var self = this;
+        self.response.speak(askPost).listen(askPost);
+        self.emit(':responseReady');
+        // this.emitWithState('startPostIntent');
+        // this.handler.state = STATES.STARTMODE;
+    },
+
+    'AMAZON.CancelIntent': function () {
+       // Triggered wheen user asks Alexa top cancel interaction
+        this.emit(':tell', stopSkillMessage);
+    },
+
+    'AMAZON.StopIntent': function () {
+       // Triggered wheen user asks Alexa top stop interaction
+        this.emit(':tell', stopSkillMessage);
+    },
+
+   // Triggered wheen user asks Alexa for help
+    'AMAZON.HelpIntent': function () {
+        this.emit(':ask', helpText, helpText);
+    },
+
+   // Triggered when no intent matches Alexa request
+    'Unhandled': function () {
+        this.emit(':ask', helpText, helpText);
+    }
+});
 
 // Add handlers.
 exports.handler = function (event, context, callback) {
    const alexa = Alexa.handler(event, context);
-   alexa.registerHandlers(handlers);
+   alexa.appId = APP_ID;
+   alexa.registerHandlers(newSessionHandlers, startConnectHandlers, writePostHandlers);
    alexa.execute();
 };
