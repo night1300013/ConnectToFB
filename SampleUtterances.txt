@@ -1,0 +1,41 @@
+readFeedIntent "my feed",
+readFeedIntent "get the feed",
+readFeedIntent "read the feed",
+readFeedIntent "get my feed",
+readFeedIntent "read my feed"
+
+startPostIntent "write a post",
+startPostIntent "write me a post",
+startPostIntent "make a post",
+startPostIntent "make me a post"
+
+writePostIntent "{hi|Message}",
+writePostIntent "{hello|Message}",
+writePostIntent "{hi|Message} {there|Message}",
+writePostIntent "{it's|Message} {cool|Message} {here|Message}",
+writePostIntent "{my|Message} {name|Message} {is|Message} {Alexa|Message}",
+writePostIntent "{the|Message} {weather|Message} {outside|Message} {is|Message} {good|Message}",
+writePostIntent "{the|Message} {meaning|Message} {of|Message} {life|Message} {is|Message} {forty-two|Message}",
+writePostIntent "{what|Message} {is|Message} {the|Message} {weather|Message} {in|Message} {Mountain View|Message}",
+writePostIntent "{you|Message} {get|Message} {nothing|Message} {you|Message} {lose|Message} {good|Message} {day|Message} {sir|Message}",
+writePostIntent "{the|Message} {quick|Message} {brown|Message} {fox|Message} {jumps|Message} {over|Message} {the|Message} {lazy|Message} {dog|Message}",
+writePostIntent "{we|Message} {are|Message} {the|Message} {dreamers|Message} {of dreams|Message}"
+
+AMAZON.StopIntent stop
+AMAZON.StopIntent off
+AMAZON.StopIntent shut up
+AMAZON.StopIntent stop it
+
+AMAZON.HelpIntent help
+AMAZON.HelpIntent help me
+AMAZON.HelpIntent what can I say
+AMAZON.HelpIntent can you help me
+
+AMAZON.NoIntent yike
+AMAZON.NoIntent nope
+AMAZON.NoIntent no
+
+AMAZON.YesIntent correct
+AMAZON.YesIntent right
+AMAZON.YesIntent yup
+AMAZON.YesIntent yes

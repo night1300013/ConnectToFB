@@ -1,0 +1,34 @@
+{
+  "intents": [
+            {
+                "name": "AMAZON.CancelIntent",
+            },
+            {
+                "name": "AMAZON.HelpIntent",
+            },
+            {
+                "name": "AMAZON.NoIntent",
+            },
+            {
+                "name": "AMAZON.StopIntent",
+            },
+            {
+                "name": "AMAZON.YesIntent",
+            },
+            {
+                "name": "readFeedIntent",
+            },
+            {
+                "name": "startPostIntent",
+            },
+            {
+                "name": "writePostIntent",
+                "slots": [
+                    {
+                        "name": "Message",
+                        "type": "AMAZON.LITERAL"
+                    }
+                ]
+            }
+        ]
+}
