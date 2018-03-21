@@ -25,7 +25,6 @@ var accessToken = "";
 const STATES = {
     STARTMODE: '_STARTMODE', //The mode can read or write the post
     FETCHMODE: '_FETCHMODE', //Try to fetch user's input
-    WRITEMODE: '_WRITEMODE' //write the post to the facebook
 };
 
 // Create a new session handler
@@ -97,8 +96,6 @@ const startConnectHandlers = Alexa.CreateStateHandler(STATES.STARTMODE, {
                                output += response.data[i].story
                            }
                        }
-                       //self.emit(':tell', output);
-                       //self.emit(':ask', anythingElse, anythingElse);
                        self.response.speak(output).listen(anythingElse);
                        self.emit(":responseReady");
                    } else {
@@ -145,14 +142,6 @@ const startConnectHandlers = Alexa.CreateStateHandler(STATES.STARTMODE, {
 });
 
 const writePostHandlers = Alexa.CreateStateHandler(STATES.FETCHMODE, {
-    // 'NewSession': function () {
-    //     this.emit('NewSession'); // Uses the handler in newSessionHandlers
-    // },
-    // 'startPostIntent': function () {
-    //     this.handler.state = STATES.STARTMODE; // Switch state
-    //     this.emitWithState("startPostIntent");
-    // },
-
     'writePostIntent': function () {
         var self = this;
         var message = this.event.request.intent.slots.Message.value;
@@ -162,7 +151,6 @@ const writePostHandlers = Alexa.CreateStateHandler(STATES.FETCHMODE, {
 
     'AMAZON.YesIntent': function(message) {
         var self = this;
-//        var s = this.attributes['message'];
         if (accessToken) {
             FB.api("/me/feed", "POST",
             {
@@ -190,8 +178,6 @@ const writePostHandlers = Alexa.CreateStateHandler(STATES.FETCHMODE, {
         var self = this;
         self.response.speak(askPost).listen(askPost);
         self.emit(':responseReady');
-        // this.emitWithState('startPostIntent');
-        // this.handler.state = STATES.STARTMODE;
     },
 
     'AMAZON.CancelIntent': function () {
@@ -204,13 +190,13 @@ const writePostHandlers = Alexa.CreateStateHandler(STATES.FETCHMODE, {
         this.emit(':tell', stopSkillMessage);
     },
 
-   // Triggered wheen user asks Alexa for help
     'AMAZON.HelpIntent': function () {
+       // Triggered wheen user asks Alexa for help
         this.emit(':ask', helpText, helpText);
     },
 
-   // Triggered when no intent matches Alexa request
     'Unhandled': function () {
+       // Triggered when no intent matches Alexa request
         this.emit(':ask', helpText, helpText);
     }
 });
