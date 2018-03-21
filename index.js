@@ -20,6 +20,8 @@ var anythingElse = "Is there anything else I can help with? You can read the fee
 
 var askPost = "What would you like to post?"
 
+var cannotRecognize = "I don't know what you say. " + askPost
+
 var accessToken = "";
 
 const STATES = {
@@ -137,6 +139,7 @@ const startConnectHandlers = Alexa.CreateStateHandler(STATES.STARTMODE, {
 
    // Triggered when no intent matches Alexa request
    'Unhandled': function () {
+       //this.emit(':ask', cannotRecognize, askPost);
        this.emit(':ask', helpText, helpText);
    }
 });
@@ -192,12 +195,12 @@ const writePostHandlers = Alexa.CreateStateHandler(STATES.FETCHMODE, {
 
     'AMAZON.HelpIntent': function () {
        // Triggered wheen user asks Alexa for help
-        this.emit(':ask', helpText, helpText);
+        this.emit(':ask', cannotRecognize, askPost);
     },
 
     'Unhandled': function () {
        // Triggered when no intent matches Alexa request
-        this.emit(':ask', helpText, helpText);
+        this.emit(':ask', cannotRecognize, askPost);
     }
 });
 
