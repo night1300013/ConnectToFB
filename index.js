@@ -1,7 +1,7 @@
 var Alexa = require('alexa-sdk');
 var FB = require('fb');
 
-const APP_ID = undefined;
+const APP_ID = process.env.APP_ID;
 
 // Messages used for Alexa to tell the user
 var repeatWelcomeMessage = "you can say read my feed, or write a post using this skill.";
@@ -24,6 +24,10 @@ var cannotRecognize = "I don't know what you say. " + askPost
 
 var accessToken = "";
 
+var ua = require('universal-analytics');
+var intentTrackingID = ua(process.env.UA_KEY);
+
+
 const STATES = {
     STARTMODE: '_STARTMODE', //The mode can read or write the post
     FETCHMODE: '_FETCHMODE', //Try to fetch user's input
@@ -40,31 +44,41 @@ const newSessionHandlers = {
        if (accessToken) {
            FB.setAccessToken(accessToken);
            this.emit(':ask', welcomeMessage, repeatWelcomeMessage);
+           var log = ("NewSession: Got the access token successfully").toString();
+           intentTrackingID.event("success", log).send();
        }
        else {
            // If we dont have an access token, we close down the skill. This should be handled better for a real skill.
            this.emit(':tell', noAccessToken, tryLaterText);
+           intentTrackingID.event("invalid request","NewSession: no access token").send();
        }
    },
 
    'AMAZON.CancelIntent': function () {
        // Triggered wheen user asks Alexa top cancel interaction
        this.emit(':tell', stopSkillMessage);
+       var log = ("Cancel successfully").toString();
+       intentTrackingID.event("success", log).send();
    },
 
    'AMAZON.StopIntent': function () {
        // Triggered wheen user asks Alexa top stop interaction
        this.emit(':tell', stopSkillMessage);
+       var log = ("Stop successfully").toString();
+       intentTrackingID.event("success", log).send();
    },
 
    // Triggered wheen user asks Alexa for help
    'AMAZON.HelpIntent': function () {
        this.emit(':ask', helpText, helpText);
+       var log = ("Got help successfully").toString();
+       intentTrackingID.event("success", log).send();
    },
 
    // Triggered when no intent matches Alexa request
    'Unhandled': function () {
        this.emit(':ask', helpText, helpText);
+       intentTrackingID.event("invalid request","cannot handle this request").send();
    }
  };
 
@@ -100,17 +114,22 @@ const startConnectHandlers = Alexa.CreateStateHandler(STATES.STARTMODE, {
                        }
                        self.response.speak(output).listen(anythingElse);
                        self.emit(":responseReady");
+                       var log = ("readFeedIntent: Got the response data successfully").toString();
+                       intentTrackingID.event("success", log).send();
                    } else {
                        // report problem with parsing data
                        self.emit(':tell', "There was an issue getting data.");
+                       intentTrackingID.event("invalid request","readFeedIntent: no response data").send();
                    }
                } else {
                    // Handle errors here.
                    console.log(response.error);
+                   intentTrackingID.event("error", response.error.toString()).send();
                }
            });
        } else {
            self.emit(':tell', noAccessToken, tryLaterText);
+           intentTrackingID.event("invalid request","readFeedIntent: no access token").send();
        }
    },
 
@@ -120,27 +139,36 @@ const startConnectHandlers = Alexa.CreateStateHandler(STATES.STARTMODE, {
        self.handler.state = STATES.FETCHMODE;
        self.response.speak(askPost).listen(askPost);
        self.emit(':responseReady');
+       // report a success
+       var log = ("startPostIntent: success").toString();
+       intentTrackingID.event("success", log).send();
    },
 
    'AMAZON.CancelIntent': function () {
        // Triggered wheen user asks Alexa top cancel interaction
        this.emit(':tell', stopSkillMessage);
+       var log = ("Cancel successfully").toString();
+       intentTrackingID.event("success", log).send();
    },
 
    'AMAZON.StopIntent': function () {
        // Triggered wheen user asks Alexa top stop interaction
        this.emit(':tell', stopSkillMessage);
+       var log = ("Stop successfully").toString();
+       intentTrackingID.event("success", log).send();
    },
 
    // Triggered wheen user asks Alexa for help
    'AMAZON.HelpIntent': function () {
        this.emit(':ask', helpText, helpText);
+       var log = ("Got help successfully").toString();
+       intentTrackingID.event("success", log).send();
    },
 
    // Triggered when no intent matches Alexa request
    'Unhandled': function () {
-       //this.emit(':ask', cannotRecognize, askPost);
        this.emit(':ask', helpText, helpText);
+       intentTrackingID.event("invalid request","cannot handle this request").send();
    }
 });
 
@@ -150,6 +178,8 @@ const writePostHandlers = Alexa.CreateStateHandler(STATES.FETCHMODE, {
         var message = this.event.request.intent.slots.Message.value;
         self.attributes['message'] = message;
         self.emit(':ask', "Are you say " + message + " ?");
+        var log = ("writePostIntent: " + message).toString();
+        intentTrackingID.event("success", log).send();
     },
 
     'AMAZON.YesIntent': function(message) {
@@ -164,43 +194,56 @@ const writePostHandlers = Alexa.CreateStateHandler(STATES.FETCHMODE, {
                     // Alexa output for successful post
                     self.response.speak("Post successful!").listen(anythingElse, anythingElse);
                     self.emit(":responseReady");
+                    var log = ("AMAZON.YesIntent: Post to facebook successfully").toString();
+                    intentTrackingID.event("success", log).send();
                 } else {
                     console.log(response.error);
                     // Output for Alexa, when there is an error.
                     self.emit(':ask', "There was an error posting to your feed, please try again");
+                    intentTrackingID.event("error", response.error.toString()).send();
                 }
             });
 
         } else{
             self.emit(':tell', noAccessToken, tryLaterText);
+            intentTrackingID.event("invalid request", "AMAZON.YesIntent: no access token").send();
         }
         self.handler.state = STATES.STARTMODE;
     },
 
-    'AMAZON.NoIntent': function() {
+    'AMAZON.NoIntent': function(intent, session, response) {
         var self = this;
         self.response.speak(askPost).listen(askPost);
         self.emit(':responseReady');
+        var log = ("AMAZON.NoIntent: ask for input again").toString();
+        intentTrackingID.event("success", log).send();
     },
 
     'AMAZON.CancelIntent': function () {
-       // Triggered wheen user asks Alexa top cancel interaction
+        // Triggered wheen user asks Alexa top cancel interaction
         this.emit(':tell', stopSkillMessage);
+        var log = ("Cancel successfully").toString();
+        intentTrackingID.event("success", log).send();
     },
 
     'AMAZON.StopIntent': function () {
-       // Triggered wheen user asks Alexa top stop interaction
+        // Triggered wheen user asks Alexa top stop interaction
         this.emit(':tell', stopSkillMessage);
+        var log = ("Stop successfully").toString();
+        intentTrackingID.event("success", log).send();
     },
 
+    // Triggered wheen user asks Alexa for help
     'AMAZON.HelpIntent': function () {
-       // Triggered wheen user asks Alexa for help
-        this.emit(':ask', cannotRecognize, askPost);
+        this.emit(':ask', helpText, helpText);
+        var log = ("Got help successfully").toString();
+        intentTrackingID.event("success", log).send();
     },
 
+    // Triggered when no intent matches Alexa request
     'Unhandled': function () {
-       // Triggered when no intent matches Alexa request
-        this.emit(':ask', cannotRecognize, askPost);
+        this.emit(':ask', helpText, helpText);
+        intentTrackingID.event("invalid request","cannot handle this request").send();
     }
 });
 
